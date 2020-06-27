@@ -1,6 +1,8 @@
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+/*
+    ! Need refactor
+*/
+
+import java.io.*;
 import java.net.*;
 
 public class Server {
@@ -11,7 +13,11 @@ public class Server {
     Socket client;
     InputStream in;
     OutputStream out;
-    String state;
+    int state = 0;
+
+    char op;
+    double arg1;
+    double arg2;
 
     /* ---------------------------------- main ---------------------------------- */
 
@@ -50,32 +56,105 @@ public static void main(String[] args) {
 /* ---------------------------------- talk ---------------------------------- */
 
     public void talk(){
-        try {
-            in = client.getInputStream();
-            out = client.getOutputStream();
-        
-            byte[] buf = new byte[100];
-            in.read(buf);
-            String msg = new String(buf,0,buf.length);
-            System.out.println(msg);
-            checkMsg(msg);
-        } catch (IOException e) {
-            e.printStackTrace();
+        while(true){
+            try {
+                in = client.getInputStream();
+                out = client.getOutputStream();
+                
+                byte[] buf = new byte[100];
+                in.read(buf);
+                String msg = new String(buf,0,buf.length).trim();
+
+                if(msg.equals(".")){
+                    state = 0;
+                    System.out.println("[Server] Status : " + state);
+                    out.write(".".getBytes());
+                    client.close();
+                    return;
+                }
+
+                if(checkMsg(msg)){
+                    if(state>1){
+                        String result = operate();
+                        out.write(result.getBytes());
+                        state = (state+1)%3;
+                        System.out.println("[Server] Status : " + state);
+                        continue;
+                    }
+                    state = (state+1)%3;
+                    System.out.println("[Server] Status : " + state);
+                    out.write("Ok".getBytes());
+                }else{
+                    System.out.println("[Server] Status : " + state);
+                    out.write("NotOk".getBytes());
+                };
+            } catch (SocketException e) {
+                state = 0;
+                System.out.println("[Server] Status : " + state);
+                return;
+            } catch (IOException e){
+                e.printStackTrace();
+            }
         }
     }
 
 /* -------------------------------- checkMsg -------------------------------- */
 
     public boolean checkMsg(String msg){
-        switch (msg) {
-            case "+": case "-" : 
+        switch (state) {
+            case 0:
+                if(msg.equals("+") || msg.equals("-") || msg.equals("/") || msg.equals("*")){
+                    op = msg.charAt(0) ;
+                    return true;
+                }
+                return false;
+        
+            case 1:
+                try {
+                    arg1 = Double.parseDouble(msg);
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+                return true;
+
+            case 2:
+                try {
+                    arg2 = Double.parseDouble(msg);
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+                return true;
                 
+            default:
+                return false;
+        }
+    }
+
+/* --------------------------------- operate -------------------------------- */
+
+    public String operate(){
+        double result = 0;
+        switch (op) {
+            case '+':
+                result = arg1+arg2;
+                break;
+            
+            case '-':
+                result = arg1-arg2;
                 break;
         
-            default:
+            case '*':
+                result = arg1*arg2;
+                break;
+            
+            case '/':
+                result = arg1/arg2;
+                break;
+            
+                default:
                 break;
         }
 
-        return true;
+        return Double.toString(result);
     }
 }
