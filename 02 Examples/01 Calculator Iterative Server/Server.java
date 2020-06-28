@@ -8,7 +8,6 @@ import java.net.*;
 public class Server {
 
     /* -------------------------------- variables ------------------------------- */
-
     ServerSocket ss;
     Socket client;
     InputStream in;
@@ -20,7 +19,6 @@ public class Server {
     double arg2;
 
     /* ---------------------------------- main ---------------------------------- */
-
 public static void main(String[] args) {
     Server s = new Server();
     s.init();
@@ -29,9 +27,7 @@ public static void main(String[] args) {
         s.talk();
     }
 }
-
     /* ---------------------------------- init ---------------------------------- */
-
     public void init() {
         try {
             ss = new ServerSocket(0);
@@ -41,9 +37,7 @@ public static void main(String[] args) {
 
         System.out.println("[Server] Open on port : " + ss.getLocalPort());
 }
-
 /* ---------------------------- waitForConnection --------------------------- */
-
     public void waitForConnection(){
         try {
             client = ss.accept();
@@ -52,9 +46,7 @@ public static void main(String[] args) {
         }
         System.out.println("[Server] Accepted client , client port : " + client.getPort());
     }
-
 /* ---------------------------------- talk ---------------------------------- */
-
     public void talk(){
         while(true){
             try {
@@ -62,11 +54,12 @@ public static void main(String[] args) {
                 out = client.getOutputStream();
                 
                 byte[] buf = new byte[100];
-                in.read(buf);
+                in.read(buf,0,buf.length);
                 String msg = new String(buf,0,buf.length).trim();
 
                 if(msg.equals(".")){
                     state = 0;
+                    System.out.println("[Server] Closing client on port " + client.getPort());
                     System.out.println("[Server] Status : " + state);
                     out.write(".".getBytes());
                     client.close();
@@ -91,15 +84,15 @@ public static void main(String[] args) {
             } catch (SocketException e) {
                 state = 0;
                 System.out.println("[Server] Status : " + state);
+                System.out.println("[Server] client on port " + client.getPort() + "disconnected");
+
                 return;
             } catch (IOException e){
                 e.printStackTrace();
             }
         }
     }
-
 /* -------------------------------- checkMsg -------------------------------- */
-
     public boolean checkMsg(String msg){
         switch (state) {
             case 0:
@@ -129,9 +122,7 @@ public static void main(String[] args) {
                 return false;
         }
     }
-
 /* --------------------------------- operate -------------------------------- */
-
     public String operate(){
         double result = 0;
         switch (op) {
@@ -154,7 +145,6 @@ public static void main(String[] args) {
                 default:
                 break;
         }
-
         return Double.toString(result);
     }
 }
